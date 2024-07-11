@@ -2,7 +2,7 @@ data = load('/Users/hoyi/Downloads/0708何翊/20240708162218_test_bleEXGdata.mat
 data = data_struct.data;
 data = double(data);
 data = data';
-% 提取CZ和FZ信號數據
+% 提取訊號1和信號2數據
 cz_signal = data(:, 1); 
 fz_signal = data(:, 2); 
 
