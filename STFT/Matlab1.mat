@@ -1,0 +1,60 @@
+filename = '/Users/hoyi/Downloads/0708何翊/20240708162218_test_bleEXGdata.mat';
+data_struct = load(filename);
+
+data = data_struct.data;
+
+% 確保數據是數組
+data = double(data);
+fs = 250;
+
+disp("數據形狀:");
+disp(size(data));
+data = data';
+% 提取和處理通道數據
+CH1 = data(:, 1);
+CH2 = data(:, 2);
+
+disp("CH1 長度:");
+disp(length(CH1));
+disp("CH2 長度:");
+disp(length(CH2));
+
+% 計算CH3
+CH3 = CH1 - CH2; 
+
+total_time = length(CH3) / fs;
+fprintf('整段時間: %.2f 秒\n', total_time);
+
+% 生成時間向量
+t = (0:length(CH3)-1) / fs;
+
+% 繪製波形
+figure;
+plot(t, CH3);
+ylim([-60 60]);
+title('CH3 波形');
+xlabel('時間 (秒)');
+ylabel('振幅');
+grid on;
+
+% 計算並繪製 STFT
+win = hamming(128);     % 使用 Hamming 窗口
+noverlap = 64;         % 重疊部分
+nfft = 512;             % FFT 點數
+
+[s, f, t_stft, ps] = spectrogram(CH3, win, noverlap, nfft, fs,'yaxis');
+
+
+figure;
+subplot(2,1,1);
+surf(t_stft / 60, f, 10*log10(abs(ps)), 'EdgeColor', 'none');
+axis tight;
+ylim([0 60]);
+view(0, 90);
+colorbar;
+title('Spectrogram');
+xlabel('Time (minutes)');
+ylabel('Frequency (Hz)');
+caxis([-10 20]);
+colormap(jet);
+
