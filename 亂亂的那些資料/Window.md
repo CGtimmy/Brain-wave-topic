@@ -1,7 +1,7 @@
 <https://ithelp.ithome.com.tw/articles/10305904>
 
-window = hamming(256); (1)
-noverlap = 128; (2)
+#### window = hamming(256); (1)
+#### noverlap = 128; (2)
 nfft = 512; (3)
 fz = 250;
 
