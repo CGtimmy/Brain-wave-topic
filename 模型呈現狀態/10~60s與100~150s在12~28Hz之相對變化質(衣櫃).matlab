@@ -53,7 +53,7 @@ fprintf('avg_power_100_150: %.5f\n', avg_power_100_150);
 % 打印相對變化值
 fprintf('10-60s與100-150s變化值: %.5f\n', relative_change);
 
-% 繪製10~60秒和100~150秒的平均功率柱状圖
+% 繪製10~60秒和100~150秒的平均功率柱狀圖
 figure;
 bar([avg_power_10_60, avg_power_100_150]);
 title('不同時間段的平均功率');
