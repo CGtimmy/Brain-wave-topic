@@ -6,10 +6,10 @@ cz_selected_power = cz_p(freq_idx, :);
 
 % 計算平均功率
 cz_avg_power = mean(cz_selected_power, 1);
-% 找到超過1的點的索引
+% 找到超過0.6的點的索引
 exceed_idx = find(cz_avg_power > 0.6);
 
-% 替換每個超過1的點
+% 替換每個超過0.6的點
 for i = 1:length(exceed_idx)
     idx = exceed_idx(i);
     if idx == 1  % 第一個點，只能用後一個點的值
@@ -39,6 +39,20 @@ cz_selected_freq1 = cz_f(freq_idx1);
 cz_selected_power1 = cz_p(freq_idx1, :);
 % 計算平均功率
 cz_avg_power1 = mean(cz_selected_power1, 1);
+% 找到超過3的點的索引
+exceed_idx1 = find(cz_avg_power1 > 3);
+
+% 替換每個超過3的點
+for i = 1:length(exceed_idx1)
+    idx = exceed_idx1(i);
+    if idx == 1  % 第一個點，只能用後一個點的值
+        cz_avg_power1(idx) = cz_avg_power1(idx + 1);
+    elseif idx == length(cz_avg_power1)  % 最後一個點，只能用前一個點的值
+        cz_avg_power1(idx) = cz_avg_power1(idx - 1);
+    else
+        cz_avg_power1(idx) = mean([cz_avg_power1(idx - 1), cz_avg_power1(idx + 1)]);
+    end
+end
 
 % 繪製折線圖Alpha波
 figure;
@@ -51,3 +65,4 @@ xlim([0 max(cz_t)]);
 xticks(0:10:max(cz_t)) 
 ylim([0 5]);
 yticks(0:0.1:5) 
+
