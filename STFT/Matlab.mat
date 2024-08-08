@@ -3,20 +3,30 @@ data = data.data;
 data = double(data);
 data = data';
 
-% 提取CZ和FZ信號數據
+% 提取CZ和FZ data(通道一 通道二）
 cz_signal = data(:, 1); 
 fz_signal = data(:, 2);
 fs = 250;
-window = hamming(256);
-noverlap = 128; 
-nfft = 512; 
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
 total_time = length(cz_signal) / fs ;
-fprintf('整段時間: %.2f 秒\n', total_time);
+tCZ = (0:length(cz_signal)-1) / fs;
+tFZ = (0:length(fz_signal)-1) / fs;
+fprintf('整段時間: %.f 秒\n', total_time);
+fprintf('data長度: %.f\n', size(cz_signal));
 
 % 計算CZ信號的STFT
 [cz_s, cz_f, cz_t, cz_p] = spectrogram(cz_signal, window, noverlap, nfft, fs);
 % 計算FZ信號的STFT
 [fz_s, fz_f, fz_t, fz_p] = spectrogram(fz_signal, window, noverlap, nfft, fs);
+
+% CZ矩陣大小
+[m, n] = size(cz_s);
+fprintf('cz_s 矩陣大小 %d x %d\n', m, n);
+
+% 顯示前10row和前10column
+%disp(cz_p(1:10, 1:10));
 
 start_time = 0;
 end_time = 430;
@@ -51,4 +61,3 @@ xlabel('Time (sec)');
 ylabel('Frequency (Hz)');
 caxis([-10 20]);
 colormap(jet);
-
