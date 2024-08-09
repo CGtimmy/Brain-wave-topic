@@ -1,3 +1,4 @@
+cz_signal = data(:, 1);    % 第一列所有行
 freq_idx = (cz_f >= 12) & (cz_f <= 28);  %布林陣列
 disp(freq_idx)   %會是直的
 freq_idx_row = freq_idx(:)';
