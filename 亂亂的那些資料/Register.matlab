@@ -472,4 +472,121 @@
 % xlim([230 280]);
 % ylim([min(relative_power_230_280)-0.1, max(relative_power_230_280)+0.1]);
 
-  
+
+
+% 計算 cz_s_twice_mean_adjusted 的增長率
+growth_rate = abs(cz_s_twice_mean_adjusted_new(2:end) ./ cz_s_twice_mean_adjusted_new(1:end-1));
+
+time_for_s = 1:length(growth_rate);
+fprintf('還沒去除體動資料點數量：');
+disp(length(growth_rate));
+% 功率增長率折線圖
+figure;
+plot(time_for_s,growth_rate, 'LineWidth', 2);
+title('Beta增長率折線圖 還沒去體動');
+xlabel('Time (seconds)');
+ylim([0 10]);
+ylabel('平均功率');
+grid on;
+
+
+% % 繪製盒狀圖
+% % figure;
+% % boxplot(growth_rate);
+% % title('增長率盒壯圖 還沒去體動');
+% % ylabel('分佈');
+% % xlabel('能量大小');
+% % 
+% % 使用isoutlier來識別離群值
+% % outliers = isoutlier(growth_rate);
+% % 繪製cz_s_twice_mean的折線圖
+% % figure;
+% % plot(time_for_s, growth_rate, '-b', 'LineWidth', 1.5); % 藍色線條
+% % 
+% % hold on;
+% % 
+% % 將離群值用紅色圓點標示出來
+% % plot(time_for_s(outliers),growth_rate(outliers), 'ro', 'MarkerSize', 8);
+% % 
+% % title('增長率折線圖 還沒去體動');
+% % xlabel('時間 (秒)');
+% % ylabel('cz\_s\_twice\_mean 值');
+% % legend('cz\_s\_twice\_mean', '離群值');
+% % 
+% % hold off;
+% % 
+% % 計算第一四分位數和第三四分位數
+% % Q1 = prctile(growth_rate, 25);
+% % Q3 = prctile(growth_rate, 75);
+% % IQR = Q3 - Q1;
+% % 
+% % 計算盒鬚的最大值
+% % whisker_max = Q3 + 1.5 * IQR;
+% % 
+% % 設置新的閾值為盒鬚最大值的兩倍
+% % threshold = 0.5* whisker_max;
+% % 
+% % 找到超過閾值的索引
+% % idx = find(growth_rate > threshold);
+% % 
+% % 初始化一個變數來存儲被刪掉的列的索引
+% % deleted_indices = [];
+% % 
+% % 檢查每個索引的下一列是否存在，如果存在則將其索引保存到 deleted_indices，並從 growth_rate 中刪除
+% % for i = 1:length(idx)
+% %     if idx(i) < length(growth_rate) % 確保不會超過範圍
+% %         將被刪掉的列的索引存儲在 deleted_indices
+% %         deleted_indices(end + 1) = idx(i) + 1;
+% %     end
+% % end
+% % 
+% % 顯示結果
+% % disp('處理後的growth_rate:');
+% % disp(growth_rate);
+% % 
+% % disp('被刪掉的列的索引:');
+% % disp(deleted_indices);
+% % 
+% % 重新計算 time_for_s
+% % time_for_s = 1:length(growth_rate);
+% % 
+% % 繪製折線圖，標示出新的離群值
+% % figure;
+% % plot(time_for_s, growth_rate, '-b', 'LineWidth', 1.5); % 藍色線條
+% % 
+% % hold on;
+% % 
+% % 使用isoutlier來識別新一輪的離群值
+% % outliers = isoutlier(growth_rate);
+% % 
+% % 將離群值用紅色圓點標示出來
+% % plot(time_for_s(outliers),growth_rate(outliers), 'ro', 'MarkerSize', 8);
+% % 
+% % title('增長率折線圖 已經去除體動');
+% % xlabel('時間 (秒)');
+% % ylabel('cz\_s\_twice\_mean 值');
+% % legend('cz\_s\_twice\_mean', '離群值');
+% % hold off;
+% % 
+% % 
+% % 將 num_of_threshold 陣列中的行從 cz_s_twice_mean_adjusted 中刪除
+% % cz_s_twice_mean_adjusted(deleted_indices) = [];
+% % 
+% % fprintf('已經去除體動資料點數量：');
+% % disp(length(cz_s_twice_mean_adjusted))
+% % % 顯示刪除後的 cz_s_twice_mean_adjusted
+% % disp('刪除後的 cz_s_twice_mean_adjusted:');
+% % disp(cz_s_twice_mean_adjusted);
+% % 
+% % 重新計算 time_for_s
+% % time_for_s = 1:length(cz_s_twice_mean_adjusted);
+% % 
+% % 繪製折線圖
+% % figure;
+% % plot(time_for_s, cz_s_twice_mean_adjusted, '-b', 'LineWidth', 1.5); % 藍色線條
+% % title('cz\_s\_twice\_mean\_adjusted (刪除閾值列後)');
+% % xlabel('時間 (秒)');
+% % ylabel('cz\_s\_twice\_mean\_adjusted 值');
+% % grid on;
+% % 
+
