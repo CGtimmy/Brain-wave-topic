@@ -590,3 +590,260 @@ grid on;
 % % grid on;
 % % 
 
+
+
+
+
+
+
+
+data = load('/Users/hoyi/Desktop/rrr/mat檔/Rawdatafile_20240813221410_bleEXGdata__Short.mat');
+data = data.data;
+data = data';
+% 提取CZ和FZ data(通道一 通道二）
+cz_signal = data(:, 3); 
+fz_signal = data(:, 1);
+fs = 250;
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
+total_time = length(cz_signal) / fs -1;
+total_time1 = round(total_time);
+tCZ = (0:length(cz_signal)-1) / fs;
+tFZ = (0:length(fz_signal)-1) / fs;
+fprintf('整段時間: %.f 秒\n', total_time);
+fprintf('data長度: %.f\n', size(cz_signal));
+
+% 計算CZ信號的STFT
+[cz_s, cz_f, cz_t, cz_p] = spectrogram(cz_signal, window, noverlap, nfft, fs,'Power');
+% 計算FZ信號的STFT
+[fz_s, fz_f, fz_t, fz_p] = spectrogram(fz_signal, window, noverlap, nfft, fs,'Power');
+
+% % CZ矩陣大小
+% [m, n] = size(cz_s);
+% fprintf('cz_s 矩陣大小 %d x %d\n', m, n);
+
+% % 顯示前10row和前10column
+% disp(cz_s(1:2, 1:2));
+% disp(cz_p(1:2, 1:2));
+start_time = 0;
+end_time = total_time;
+
+% 繪製CZ頻譜圖
+figure;
+subplot(2,1,1);
+surf(cz_t, cz_f, 10*log10(abs(cz_p)), 'EdgeColor', 'none');
+axis tight;
+ylim([0 60]);
+xlim([start_time end_time])  %秒數區段
+xticks(start_time:10:end_time) %每幾秒顯示一個刻度
+view(0, 90);
+colorbar;
+title('CZ Spectrogram');
+xlabel('Time (sec)');
+ylabel('Frequency (Hz)');
+caxis([-10 20]);
+colormap(jet);
+
+% 繪製FZ頻譜圖
+subplot(2,1,2);
+surf(fz_t, fz_f, 10*log10(abs(fz_p)), 'EdgeColor', 'none');
+axis tight;
+ylim([0 60]);
+xlim([start_time end_time])  %秒數區段
+xticks(start_time:10:end_time) %每幾秒顯示一個刻度
+view(0, 90);
+colorbar;
+title('FZ Spectrogram');
+xlabel('Time (sec)');
+ylabel('Frequency (Hz)');
+caxis([-10 20]);
+colormap(jet);
+
+% beta_freg_idx = (cz_f >= 12) & (cz_f <= 28);
+% 
+% beta_cz_s_abs = abs(cz_s);
+% beta_selected_power = beta_cz_s_abs(beta_freg_idx, :);
+% beta_mean = mean(beta_selected_power,1);
+% 
+% %Alpha波
+% freq_idx_alpha = (cz_f >= 8) & (cz_f <= 12);
+% alpha_power = abs(cz_s);
+% alpha_selected_power = alpha_power(freq_idx_alpha, :);
+% alpha_mean = mean(alpha_power,1);
+% 
+% % 總點數
+% total_points = length(beta_mean);
+% fprintf('總點數: %d\n', total_points);
+% 
+% % 如果beta_mean的長度是奇數，刪除最後一個元素
+% if mod(length(beta_mean), 2) ~= 0
+%     beta_mean(end) = [];
+%     alpha_mean(end) = [];
+% end
+% 
+% % 將beta_mean中的每兩列數值平均
+% beta_mean = mean(reshape(beta_mean, 2, []), 1);
+% fprintf('beta_mean: %d\n', length(beta_mean));
+% 
+% %alpha
+% alpha_mean = mean(reshape(alpha_mean, 2, []), 1);
+% 
+% % 獨立出前58列並存成新變數
+% beta_mean_baseline = beta_mean(1:60);
+% 
+% % % 繪製盒狀圖
+% % figure;
+% % boxplot(beta_mean_baseline);
+% % title('12-28 Hz 1~58s');
+% % ylabel('分佈');
+% % xlabel('能量大小');
+% alpha_mean_1_58 = alpha_mean(1:60);
+% % 使用isoutlier來識別離群值
+% outliers = isoutlier(beta_mean_baseline);
+% outliers1 = isoutlier(alpha_mean_1_58);
+% 
+% % 将 outliers1 中为 1 的位置替换到 outliers 中
+% outliers(outliers1 == 1) = 1;
+% 
+% 
+% 
+% % 離群值的數量
+% num_outliers = sum(outliers);
+% fprintf('離群值的數量: %d\n', num_outliers);
+% 
+% % 離群值在矩陣中的位置
+% outlier_positions = find(outliers);
+% fprintf('離群值的位置: ');
+% disp(outlier_positions);
+% 
+% beta_mean_baseline(outlier_positions) = [];
+% beta_mean(outlier_positions) = [];
+% % disp(beta_mean_baseline);
+% 
+% %Alpha
+% alpha_mean(outlier_positions)=[];
+% alpha_mean_1_58(outlier_positions) = [];
+% alpha_mean_mean_1_58 = mean(alpha_mean_1_58);
+% 
+% beta_mean(1:length(beta_mean_baseline)) = beta_mean_baseline; %覆蓋  %%%???為何不直接
+% 
+% % time_for_s = 0:length(beta_mean_baseline)-1;
+% % 
+% % % %% 繪製折線圖Beta波 1~58s
+% % figure;
+% % plot(time_for_s,beta_mean_baseline, 'LineWidth', 2);
+% % title('12-28Hz平均功率(已去除超過100的點)1~58s');
+% % xlabel('Time (seconds)');
+% % ylim([0 100]);
+% % ylabel('平均功率');
+% % grid on;
+% 
+% beta_mean_mean_baseline = mean(beta_mean_baseline);
+% 
+% 
+% % 將 beta_mean 的每一列減去 beta_mean_mean_baseline
+% beta_mean = beta_mean - beta_mean_mean_baseline;
+% beta_mean = beta_mean / beta_mean_mean_baseline;
+% 
+% %Alpha
+% alpha_mean = alpha_mean - alpha_mean_mean_1_58;
+% alpha_mean = alpha_mean / alpha_mean_mean_1_58;
+% 
+% %%%平移！！！
+% beta_mean_offset = beta_mean;
+% % 找到最小值
+% min_value = min(beta_mean);
+% % 計算偏移量
+% if min_value < 0
+%     offset = abs(min_value);
+% else
+%     offset = 0;
+% end
+% 
+% % 平移數值
+% beta_mean_offset = beta_mean_offset + offset + 0.1;
+% time_for_s = 1:length(beta_mean_offset);
+% 
+% 
+% 
+% % 计算中位数
+% median_value = median(beta_mean_offset);
+% 
+% % 找到小于中位数的点并将其替换为中位数
+% beta_mean_offset(beta_mean_offset < median_value) = median_value;
+% 
+% 
+% 
+% % 初始化一個變數來存儲被刪掉的列的索引
+% deleted_indices = [];
+% 
+% % 遍歷 beta_mean_offset，檢查是否下一列的值是目前列的值的5倍
+% i = 1;
+% while i < length(beta_mean_offset)
+%     if beta_mean_offset(i + 1) >= 2 * beta_mean_offset(i)
+%         % 如果條件滿足，記錄被刪除的列的索引
+%         deleted_indices(end + 1) = i + 1;
+%         % 刪除下一列
+%         fprintf('當前的值');
+%         disp(beta_mean_offset(i));
+%         fprintf('被刪的值');
+%         disp(beta_mean_offset(i + 1));
+%         beta_mean_offset(i + 1) = [];
+%         beta_mean(i + 1) = [];
+%         alpha_mean(i + 1) = [];
+%         % 不移動i, 以便重新檢查新的下一列
+%     else
+%         % 只有當沒有刪除列時，才移動到下一個元素
+%         i = i + 1;
+%     end
+% end
+% 
+% % 顯示被刪掉的列的索引
+% disp('被刪掉的列的索引:');
+% disp(deleted_indices);
+% 
+% % 繪製調整後的折線圖Beta波
+% time_for_s = 1:length(beta_mean);
+% figure;
+% plot(time_for_s, beta_mean, 'LineWidth', 2);
+% title('12~28Hz平均功率(去除體動)(標準化)');
+% xlabel('Time (seconds)');
+% ylim([-1 3]);
+% xlim([0 length(time_for_s)]);  % 秒數區段
+% xticks(0:10:length(time_for_s));  % 每幾秒顯示一個刻度
+% ylabel('平均功率');
+% grid on;
+% 
+% % 繪製調整後的折線圖Alpha波
+% time_for_s = 1:length(alpha_mean);
+% figure;
+% plot(time_for_s, alpha_mean, 'LineWidth', 2);
+% title('8~12Hz平均功率(去除體動)(標準化)');
+% xlabel('Time (seconds)');
+% ylim([-1 3]);
+% xlim([0 length(time_for_s)]);  % 秒數區段
+% xticks(0:10:length(time_for_s));  % 每幾秒顯示一個刻度
+% ylabel('平均功率');
+% grid on;
+% 
+% beta_mean_baseline = (beta_mean_baseline-beta_mean_mean_baseline) / beta_mean_mean_baseline;
+% 
+% 
+% % 将 beta_mean 和 alpha_mean 组合成一个矩阵
+% combined_data = [beta_mean', alpha_mean'];
+% 
+% % 使用 k-means 进行聚类
+% num_clusters = 3;  % 设置为三群
+% [idx, C] = kmeans(combined_data, num_clusters);
+% 
+% % % 显示聚类结果
+% % fprintf('聚类索引:\n');
+% % disp(idx);
+% 
+% % 绘制聚类结果的散点图
+% figure;
+% scatter(beta_mean, alpha_mean, 50, idx, 'filled');
+% title('K-means 聚类结果');
+% xlabel('Beta 波能量');
+% ylabel('Alpha 波能量');
