@@ -847,3 +847,415 @@ colormap(jet);
 % title('K-means 聚类结果');
 % xlabel('Beta 波能量');
 % ylabel('Alpha 波能量');
+
+
+
+%第四次腦波數據(Short Horror File) 周孟軒 4CH+G CH1:FZ CH3:CZ
+data_Short = load('/Users/hoyi/Desktop/rrr/mat檔/Rawdatafile_20240813221410_bleEXGdata_Short.mat');
+data_Short = data_Short.data;
+data_Short = data_Short';
+cz_signal_Short = data_Short(:, 1); 
+fs = 250;
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
+total_time_Short = length(cz_signal_Short) / fs;
+fprintf('Short整段時間: %.f 秒\n', total_time_Short);
+fprintf('Short的data長度: %.f\n', size(cz_signal_Short));
+
+% Short在Cz的STFT
+[cz_s_Short, cz_f_Short, cz_t_Short, cz_p_Short] = spectrogram(cz_signal_Short, window, noverlap, nfft, fs,'Power');
+
+start_time_Short = 0;
+end_time_Short = total_time_Short;
+
+% % Short在Cz的頻譜圖
+% figure;
+% subplot(2,1,1);
+% surf(cz_t_Short, cz_f_Short, 10*log10(abs(cz_p_Short)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Short end_time_Short])  %秒數區段
+% xticks(start_time_Short:20:end_time_Short) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('CZ Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+
+beta_freg_idx_Short = (cz_f_Short >= 12) & (cz_f_Short <= 28);
+beta_cz_s_abs_Short = abs(cz_s_Short);
+beta_selected_power_Short = beta_cz_s_abs_Short(beta_freg_idx_Short, :);
+beta_mean_Short = mean(beta_selected_power_Short,1);
+
+%Alpha波
+alpha_freg_idx_Short = (cz_f_Short >= 8) & (cz_f_Short <= 12);
+alpha_cz_s_abs_Short = abs(cz_s_Short);
+alpha_selected_power_Short = alpha_cz_s_abs_Short(alpha_freg_idx_Short, :);
+alpha_mean_Short = mean(alpha_selected_power_Short,1);
+
+% 如果Short的長度是奇數，刪除最後5個元素，若是偶數，刪除最後4個元素
+if mod(length(beta_mean_Short), 2) ~= 0
+    beta_mean_Short(length(beta_mean_Short)-8:end) = [];
+    alpha_mean_Short(length(alpha_mean_Short)-8:end) = [];
+else 
+    beta_mean_Short(length(beta_mean_Short)-7:end) = [];
+    alpha_mean_Short(length(alpha_mean_Short)-7:end) = [];
+end
+
+% 將Short中的每兩列數值平均
+beta_mean_Short = mean(reshape(beta_mean_Short, 2, []), 1);
+alpha_mean_Short = mean(reshape(alpha_mean_Short, 2, []), 1);
+
+fprintf("Short每秒資料點數量：");
+disp(length(beta_mean_Short));
+
+
+% 將Short前60列存成新變數
+beta_mean_baseline_Short = beta_mean_Short(1:60);
+alpha_mean_baseline_Short = alpha_mean_Short(1:60);
+
+% 使用isoutlier來識別Short的baseline離群值
+beta_outliers_baseline_Short = isoutlier(beta_mean_baseline_Short);
+alpha_outliers_baseline_Short = isoutlier(alpha_mean_baseline_Short);
+
+% 將alpha_outliers_baseline_Short中為1的位置替換到beta_outliers_baseline_Short中
+beta_outliers_baseline_Short(alpha_outliers_baseline_Short == 1) = 1;
+outliers_baseline_Short = beta_outliers_baseline_Short;
+
+% Short的baseline離群值的數量
+fprintf('Short的baseline離群值的數量: %d\n',sum(outliers_baseline_Short));
+
+% Short的baseline離群值在矩陣中的位置
+outliers_positions_baseline_Short = find(outliers_baseline_Short);
+fprintf('離群值的位置: ');
+disp(outliers_positions_baseline_Short);
+
+%Short將1-60s離群值刪除
+beta_mean_baseline_Short(outliers_positions_baseline_Short) = [];
+beta_mean_Short(outliers_positions_baseline_Short) = [];
+
+alpha_mean_baseline_Short(outliers_positions_baseline_Short) = [];
+alpha_mean_Short(outliers_positions_baseline_Short)=[];
+
+%Short的baseline的平均值
+beta_mean_mean_baseline_Short = mean(beta_mean_baseline_Short);
+alpha_mean_mean_baseline_Short = mean(alpha_mean_baseline_Short);
+
+
+%Short標準化
+beta_mean_Short = beta_mean_Short - beta_mean_mean_baseline_Short;
+beta_mean_Short = beta_mean_Short / beta_mean_mean_baseline_Short;
+
+alpha_mean_Short = alpha_mean_Short - alpha_mean_mean_baseline_Short;
+alpha_mean_Short = alpha_mean_Short / alpha_mean_mean_baseline_Short;
+
+%Short平移
+%beta 
+%找到最小值 計算偏移量 如果最小值比0小 將最小值平移至0.1 其他數值向上平移
+beta_mean_move_Short = beta_mean_Short;
+if min(beta_mean_Short) < 0
+    beta_mean_offset_Short = abs(min(beta_mean_Short));
+else
+    beta_mean_offset_Short = 0;
+end
+beta_mean_move_Short = beta_mean_move_Short + beta_mean_offset_Short + 0.1;
+
+%計算中位數 並將小於中位數的所有點替換為中位數
+beta_mean_move_median_Short = median(beta_mean_move_Short);
+beta_mean_move_Short(beta_mean_move_Short < beta_mean_move_median_Short) = beta_mean_move_median_Short;
+
+%alpha
+alpha_mean_move_Short = alpha_mean_Short;
+if min(alpha_mean_Short) < 0
+    alpha_mean_offset_Short = abs(min(alpha_mean_Short));
+else
+    alpha_mean_offset_Short = 0;
+end
+alpha_mean_move_Short = alpha_mean_move_Short + alpha_mean_offset_Short + 0.1;
+
+alpha_mean_move_median_Short = median(alpha_mean_move_Short);
+alpha_mean_move_Short(alpha_mean_move_Short < alpha_mean_move_median_Short) = alpha_mean_move_median_Short;
+
+
+% 初始化一個變數來存儲被刪掉的列的索引
+deleted_idx_Short = [];
+
+% 遍歷 beta_mean_move_Short，檢查是否下一列的值是目前列的值的2倍
+i_Short = 1;
+while i_Short < length(beta_mean_move_Short)
+    if beta_mean_move_Short(i_Short + 1) >= 2 * beta_mean_move_Short(i_Short)
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Short(end + 1) = i_Short + 1;
+        % 刪除下一列
+        % fprintf('當前的值');
+        % disp(beta_mean_move_Short(i_Short));
+        % fprintf('被刪的值');
+        % disp(beta_mean_move_Short(i_Short + 1));
+        beta_mean_move_Short(i_Short + 1) = [];
+        alpha_mean_move_Short(i_Short + 1) = [];
+        beta_mean_Short(i_Short + 1) = [];
+        alpha_mean_Short(i_Short + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Short = i_Short + 1;
+    end
+end
+
+disp('被刪掉的列的索引(Beta第一run):');
+disp(deleted_idx_Short);
+deleted_idx_Short = [];
+
+% 遍歷 alpha_mean_move_Short，檢查是否下一列的值是目前列的值的2倍
+i_Short = 1;
+while i_Short < length(alpha_mean_move_Short)
+    if alpha_mean_move_Short(i_Short + 1) >= 2 * alpha_mean_move_Short(i_Short)
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Short(end + 1) = i_Short + 1;
+        % 刪除下一列
+        % fprintf('當前的值');
+        % disp(alpha_mean_move_Short(i_Short));
+        % fprintf('被刪的值');
+        % disp(alpha_mean_move_Short(i_Short + 1));
+        alpha_mean_move_Short(i_Short + 1) = [];
+        beta_mean_move_Short(i_Short + 1) = [];
+        alpha_mean_Short(i_Short + 1) = [];
+        beta_mean_Short(i_Short + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Short = i_Short + 1;
+    end
+end
+
+disp('被刪掉的列的索引(alpha第二run):');
+disp(deleted_idx_Short);
+
+
+% %% 繪製調整後的折線圖Beta波
+% % time_for_s = 1:length(beta_mean_move_Short);
+% % figure;
+% % plot(time_for_s, beta_mean_move_Short, 'LineWidth', 2);
+% % title('12~28Hz平均功率(去除體動)(標準化)');
+% % xlabel('Time (seconds)');
+% % ylim([-1 3]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:10:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('平均功率');
+% % grid on;
+% % 
+% % 
+% % %繪製調整後的折線圖Alpha波
+% % time_for_s = 1:length(alpha_mean_move_Short);
+% % figure;
+% % plot(time_for_s, alpha_mean_move_Short, 'LineWidth', 2);
+% % title('8~12Hz平均功率(去除體動)(標準化)');
+% % xlabel('Time (seconds)');
+% % ylim([-1 3]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:10:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('平均功率');
+% % grid on;
+
+
+%第五次腦波數據(Bloody Mary Horror) 何翊 4CH+G CH1:CZ CH2:FZ
+data_Bloody = load('/Users/hoyi/Desktop/rrr/mat檔/Rawdatafile_20240814123710_bleEXGdata_Bloody.mat');
+data_Bloody = data_Bloody.data;
+data_Bloody = data_Bloody';
+cz_signal_Bloody = data_Bloody(:, 1); 
+fs = 250;
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
+total_time_Bloody = length(cz_signal_Bloody) / fs;
+fprintf('Bloody整段時間: %.f 秒\n', total_time_Bloody);
+fprintf('Bloody的data長度: %.f\n', size(cz_signal_Bloody));
+
+% Bloody在Cz的STFT
+[cz_s_Bloody, cz_f_Bloody, cz_t_Bloody, cz_p_Bloody] = spectrogram(cz_signal_Bloody, window, noverlap, nfft, fs,'Power');
+
+start_time_Bloody = 0;
+end_time_Bloody = total_time_Bloody;
+
+% % Bloody在Cz的頻譜圖
+% figure;
+% subplot(2,1,1);
+% surf(cz_t_Bloody, cz_f_Bloody, 10*log10(abs(cz_p_Bloody)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Bloody end_time_Bloody])  %秒數區段
+% xticks(start_time_Bloody:20:end_time_Bloody) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('CZ Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+
+beta_freg_idx_Bloody = (cz_f_Bloody >= 12) & (cz_f_Bloody <= 28);
+beta_cz_s_abs_Bloody = abs(cz_s_Bloody);
+beta_selected_power_Bloody = beta_cz_s_abs_Bloody(beta_freg_idx_Bloody, :);
+beta_mean_Bloody = mean(beta_selected_power_Bloody,1);
+
+%Alpha波
+alpha_freg_idx_Bloody = (cz_f_Bloody >= 8) & (cz_f_Bloody <= 12);
+alpha_cz_s_abs_Bloody = abs(cz_s_Bloody);
+alpha_selected_power_Bloody = alpha_cz_s_abs_Bloody(alpha_freg_idx_Bloody, :);
+alpha_mean_Bloody = mean(alpha_selected_power_Bloody,1);
+
+% 如果Bloody的長度是奇數，刪除最後5個元素，若是偶數，刪除最後4個元素
+if mod(length(beta_mean_Bloody), 2) ~= 0
+    beta_mean_Bloody(length(beta_mean_Bloody)-8:end) = [];
+    alpha_mean_Bloody(length(alpha_mean_Bloody)-8:end) = [];
+else 
+    beta_mean_Bloody(length(beta_mean_Bloody)-7:end) = [];
+    alpha_mean_Bloody(length(alpha_mean_Bloody)-7:end) = [];
+end
+
+% 將Bloody中的每兩列數值平均
+beta_mean_Bloody = mean(reshape(beta_mean_Bloody, 2, []), 1);
+alpha_mean_Bloody = mean(reshape(alpha_mean_Bloody, 2, []), 1);
+
+fprintf("Bloody每秒資料點數量：");
+disp(length(beta_mean_Bloody));
+
+
+% 將Bloody前60列存成新變數
+beta_mean_baseline_Bloody = beta_mean_Bloody(1:60);
+alpha_mean_baseline_Bloody = alpha_mean_Bloody(1:60);
+
+% 使用isoutlier來識別Bloody的baseline離群值
+beta_outliers_baseline_Bloody = isoutlier(beta_mean_baseline_Bloody);
+alpha_outliers_baseline_Bloody = isoutlier(alpha_mean_baseline_Bloody);
+
+% 將alpha_outliers_baseline_Bloody中為1的位置替換到beta_outliers_baseline_Bloody中
+beta_outliers_baseline_Bloody(alpha_outliers_baseline_Bloody == 1) = 1;
+outliers_baseline_Bloody = beta_outliers_baseline_Bloody;
+
+% Bloody的baseline離群值的數量
+fprintf('Bloody的baseline離群值的數量: %d\n',sum(outliers_baseline_Bloody));
+
+% Bloody的baseline離群值在矩陣中的位置
+outliers_positions_baseline_Bloody = find(outliers_baseline_Bloody);
+fprintf('Bloody離群值的位置: ');
+disp(outliers_positions_baseline_Bloody);
+
+%Bloody將1-60s離群值刪除
+beta_mean_baseline_Bloody(outliers_positions_baseline_Bloody) = [];
+beta_mean_Bloody(outliers_positions_baseline_Bloody) = [];
+
+alpha_mean_baseline_Bloody(outliers_positions_baseline_Bloody) = [];
+alpha_mean_Bloody(outliers_positions_baseline_Bloody)=[];
+
+%Bloody的baseline的平均值
+beta_mean_mean_baseline_Bloody = mean(beta_mean_baseline_Bloody);
+alpha_mean_mean_baseline_Bloody = mean(alpha_mean_baseline_Bloody);
+
+
+%Bloody標準化
+beta_mean_Bloody = beta_mean_Bloody - beta_mean_mean_baseline_Bloody;
+beta_mean_Bloody = beta_mean_Bloody / beta_mean_mean_baseline_Bloody;
+
+alpha_mean_Bloody = alpha_mean_Bloody - alpha_mean_mean_baseline_Bloody;
+alpha_mean_Bloody = alpha_mean_Bloody / alpha_mean_mean_baseline_Bloody;
+
+%Bloody平移
+%beta 
+%找到最小值 計算偏移量 如果最小值比0小 將最小值平移至0.1 其他數值向上平移
+beta_mean_move_Bloody = beta_mean_Bloody;
+if min(beta_mean_Bloody) < 0
+    beta_mean_offset_Bloody = abs(min(beta_mean_Bloody));
+else
+    beta_mean_offset_Bloody = 0;
+end
+beta_mean_move_Bloody = beta_mean_move_Bloody + beta_mean_offset_Bloody + 0.1;
+
+%計算中位數 並將小於中位數的所有點替換為中位數
+beta_mean_move_median_Bloody = median(beta_mean_move_Bloody);
+beta_mean_move_Bloody(beta_mean_move_Bloody < beta_mean_move_median_Bloody) = beta_mean_move_median_Bloody;
+
+%alpha
+alpha_mean_move_Bloody = alpha_mean_Bloody;
+if min(alpha_mean_Bloody) < 0
+    alpha_mean_offset_Bloody = abs(min(alpha_mean_Bloody));
+else
+    alpha_mean_offset_Bloody = 0;
+end
+alpha_mean_move_Bloody = alpha_mean_move_Bloody + alpha_mean_offset_Bloody + 0.1;
+
+alpha_mean_move_median_Bloody = median(alpha_mean_move_Bloody);
+alpha_mean_move_Bloody(alpha_mean_move_Bloody < alpha_mean_move_median_Bloody) = alpha_mean_move_median_Bloody;
+
+
+% 初始化一個變數來存儲被刪掉的列的索引
+deleted_idx_Bloody = [];
+
+% 遍歷 beta_mean_move_Bloody，檢查是否下一列的值是目前列的值的2倍
+i_Bloody = 1;
+while i_Bloody < length(beta_mean_move_Bloody)
+    if beta_mean_move_Bloody(i_Bloody + 1) >= 2 * beta_mean_move_Bloody(i_Bloody)
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Bloody(end + 1) = i_Bloody + 1;
+        % 刪除下一列
+        % fprintf('當前的值');
+        % disp(beta_mean_move_Bloody(i_Bloody));
+        % fprintf('被刪的值');
+        % disp(beta_mean_move_Bloody(i_Bloody + 1));
+        beta_mean_move_Bloody(i_Bloody + 1) = [];
+        alpha_mean_move_Bloody(i_Bloody + 1) = [];
+        beta_mean_Bloody(i_Bloody + 1) = [];
+        alpha_mean_Bloody(i_Bloody + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Bloody = i_Bloody + 1;
+    end
+end
+
+disp('Bloody被刪掉的列的索引(Beta第一run):');
+disp(deleted_idx_Bloody);
+deleted_idx_Bloody = [];
+
+% 遍歷 alpha_mean_move_Bloody，檢查是否下一列的值是目前列的值的2倍
+i_Bloody = 1;
+while i_Bloody < length(alpha_mean_move_Bloody)
+    if alpha_mean_move_Bloody(i_Bloody + 1) >= 2 * alpha_mean_move_Bloody(i_Bloody)
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Bloody(end + 1) = i_Bloody + 1;
+        % 刪除下一列
+        % fprintf('當前的值');
+        % disp(alpha_mean_move_Bloody(i_Bloody));
+        % fprintf('被刪的值');
+        % disp(alpha_mean_move_Bloody(i_Bloody + 1));
+        alpha_mean_move_Bloody(i_Bloody + 1) = [];
+        beta_mean_move_Bloody(i_Bloody + 1) = [];
+        alpha_mean_Bloody(i_Bloody + 1) = [];
+        beta_mean_Bloody(i_Bloody + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Bloody = i_Bloody + 1;
+    end
+end
+
+disp('Bloody被刪掉的列的索引(alpha第二run):');
+disp(deleted_idx_Bloody);
+
+
+%所有data
+beta_mean = [beta_mean_Short,beta_mean_Bloody];
+alpha_mean = [alpha_mean_Short, alpha_mean_Bloody];
+combined_data = [beta_mean', alpha_mean'];
+% Short k-means 
+num_clusters = 3;  %
+[idx, C] = kmeans(combined_data, num_clusters);
+
+figure;
+scatter(beta_mean, alpha_mean, 50, idx, 'filled');
+title('K-means ');
+xlabel('Beta');
+ylabel('Alpha');
