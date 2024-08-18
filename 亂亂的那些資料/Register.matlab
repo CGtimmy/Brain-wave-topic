@@ -1259,3 +1259,32 @@ scatter(beta_mean, alpha_mean, 50, idx, 'filled');
 title('K-means ');
 xlabel('Beta');
 ylabel('Alpha');
+
+%所有data
+beta_mean = [beta_mean_Short];
+alpha_mean = [alpha_mean_Short];
+combined_data = [beta_mean', alpha_mean'];
+% k-means 
+num_clusters = 3;  %
+[idx, C] = kmeans(combined_data, num_clusters, 'Replicates', 20);
+
+
+counts = histcounts(idx, num_clusters);
+
+% 获取每个点在数据中的索引
+indices = 1:length(beta_mean);
+
+% 创建三维散点图
+figure;
+scatter3(beta_mean, alpha_mean, indices, 50, idx, 'filled'); % 使用scatter3绘制3D散点图
+
+hold on;
+plot3(C(:, 1), C(:, 2), mean(indices)*ones(size(C, 1), 1), 'kx', 'MarkerSize', 15, 'LineWidth', 3); % 绘制质心
+
+title('K-means with Indices');
+xlabel('Beta');
+ylabel('Alpha');
+zlabel('Index');
+
+% 绘制图例
+legend('baseline', 'fatigue', 'recovered', 'Centroids');
