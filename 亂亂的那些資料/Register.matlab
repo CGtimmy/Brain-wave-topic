@@ -1288,3 +1288,451 @@ zlabel('Index');
 
 % 绘制图例
 legend('baseline', 'fatigue', 'recovered', 'Centroids');
+
+
+
+close all
+%第三次腦波數據(Wardrobe) 何翊 2CH CH1:CZ CH2:FZ
+data_Wardrobe = load('/Users/hoyi/Desktop/rrr/mat檔/20240715131051_test_bleEXGdata_Wardrobe.mat');
+data_Wardrobe = data_Wardrobe.data;
+data_Wardrobe = data_Wardrobe';
+cz_signal_Wardrobe = data_Wardrobe(:, 1); 
+fz_signal_Wardrobe = data_Wardrobe(:, 2); 
+fs = 250;
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
+total_time_Wardrobe = length(cz_signal_Wardrobe) / fs;
+fprintf('Wardrobe整段時間: %.f 秒\n', total_time_Wardrobe);
+% fprintf('Wardrobe的data長度: %.f\n', size(cz_signal_Wardrobe));
+
+% Wardrobe在Cz的STFT
+[cz_s_Wardrobe, cz_f_Wardrobe, cz_t_Wardrobe, cz_p_Wardrobe] = spectrogram(cz_signal_Wardrobe, window, noverlap, nfft, fs,'Power');
+[fz_s_Wardrobe, fz_f_Wardrobe, fz_t_Wardrobe, fz_p_Wardrobe] = spectrogram(fz_signal_Wardrobe, window, noverlap, nfft, fs,'Power');
+start_time_Wardrobe = 0;
+end_time_Wardrobe = total_time_Wardrobe;
+
+% % Wardrobe在Cz的頻譜圖
+% figure;
+% subplot(2,1,1);
+% surf(cz_t_Wardrobe, cz_f_Wardrobe, 10*log10(abs(cz_p_Wardrobe)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Wardrobe end_time_Wardrobe])  %秒數區段
+% xticks(start_time_Wardrobe:20:end_time_Wardrobe) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('CZ Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+% 
+% % Wardrobe在fz的頻譜圖
+% subplot(2,1,2);
+% surf(fz_t_Wardrobe, fz_f_Wardrobe, 10*log10(abs(fz_p_Wardrobe)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Wardrobe end_time_Wardrobe])  %秒數區段
+% xticks(start_time_Wardrobe:20:end_time_Wardrobe) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('fz Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+% 
+
+score_Wardrobe(1:60) = 1;
+score_Wardrobe(61:106) = 1;
+score_Wardrobe(106:109) = 4;
+score_Wardrobe(110:119) = 3;
+score_Wardrobe(120:125) = 2;
+score_Wardrobe(126:128) = 6;
+score_Wardrobe(129:149) = 4;
+score_Wardrobe(150:152) = 5;
+score_Wardrobe(153:158) = 4;
+score_Wardrobe(159:174) = 5;
+score_Wardrobe(175:210) = 5;
+score_Wardrobe(211:235) = 4;
+score_Wardrobe(236:244) = 5;
+score_Wardrobe(245:255) = 6;
+score_Wardrobe(256:259) = 7;
+score_Wardrobe(360:270) = 4;
+score_Wardrobe(271:310) = 3;
+score_Wardrobe(311:340) = 5;
+score_Wardrobe(341:370) = 4;
+score_Wardrobe(341:370) = 4;
+score_Wardrobe(371:390) = 3;
+score_Wardrobe(391:426) = 4;
+
+%Beta波範圍
+beta_freg_idx_Wardrobe = (cz_f_Wardrobe >= 12) & (cz_f_Wardrobe <= 28);
+beta_cz_s_abs_Wardrobe = abs(cz_s_Wardrobe);
+beta_selected_power_Wardrobe = beta_cz_s_abs_Wardrobe(beta_freg_idx_Wardrobe, :);
+beta_mean_Wardrobe = mean(beta_selected_power_Wardrobe,1);
+
+%Alpha波範圍
+alpha_freg_idx_Wardrobe = (cz_f_Wardrobe >= 8) & (cz_f_Wardrobe <= 12);
+alpha_cz_s_abs_Wardrobe = abs(cz_s_Wardrobe);
+alpha_selected_power_Wardrobe = alpha_cz_s_abs_Wardrobe(alpha_freg_idx_Wardrobe, :);
+alpha_mean_Wardrobe = mean(alpha_selected_power_Wardrobe,1);
+
+
+% 如果Wardrobe的長度是奇數，刪除最後5個元素，若是偶數，刪除最後4個元素
+if mod(length(beta_mean_Wardrobe), 2) ~= 0
+    beta_mean_Wardrobe(length(beta_mean_Wardrobe)-8:end) = [];
+    alpha_mean_Wardrobe(length(alpha_mean_Wardrobe)-8:end) = [];
+else 
+    beta_mean_Wardrobe(length(beta_mean_Wardrobe)-7:end) = [];
+    alpha_mean_Wardrobe(length(alpha_mean_Wardrobe)-7:end) = [];
+end
+
+% 將Wardrobe中的每兩列數值平均
+beta_mean_Wardrobe = mean(reshape(beta_mean_Wardrobe, 2, []), 1);
+alpha_mean_Wardrobe = mean(reshape(alpha_mean_Wardrobe, 2, []), 1);
+
+total_data_Wardrobe = length(beta_mean_Wardrobe);
+fprintf('Wardrobe資料點總數量:');
+disp(total_data_Wardrobe);
+
+delete_data_Wardrobe = 0;
+
+% 計算 Q1, Q3 和 IQR
+beta_Q1_Wardrobe= prctile(beta_mean_Wardrobe, 25);  % 第 25 百分位數
+beta_Q3_Wardrobe = prctile(beta_mean_Wardrobe, 75);  % 第 75 百分位數
+beta_IQR_Wardrobe= beta_Q3_Wardrobe - beta_Q1_Wardrobe;  % 四分位距
+
+alpha_Q1_Wardrobe = prctile(alpha_mean_Wardrobe, 25);  % 第 25 百分位數
+alpha_Q3_Wardrobe = prctile(alpha_mean_Wardrobe, 75);  % 第 75 百分位數
+alpha_IQR_Wardrobe = alpha_Q3_Wardrobe - alpha_Q1_Wardrobe;  % 四分位距
+
+% 計算離群值上下界
+beta_lower_bound_Wardrobe  = beta_Q1_Wardrobe- 1.5 * beta_IQR_Wardrobe;
+beta_upper_bound_Wardrobe  = beta_Q3_Wardrobe + 1.5 * beta_IQR_Wardrobe;
+
+alpha_lower_bound_Wardrobe = alpha_Q1_Wardrobe - 1.5 * alpha_IQR_Wardrobe;
+alpha_upper_bound_Wardrobe = alpha_Q3_Wardrobe + 1.5 * alpha_IQR_Wardrobe;
+
+% 判斷哪些數值為離群值
+beta_outliers_Wardrobe = (beta_mean_Wardrobe < beta_lower_bound_Wardrobe ) | (beta_mean_Wardrobe > beta_upper_bound_Wardrobe );
+alpha_outliers_Wardrobe = (alpha_mean_Wardrobe < alpha_lower_bound_Wardrobe) | (alpha_mean_Wardrobe > alpha_upper_bound_Wardrobe);
+outliers_Wardrobe = intersect(find(beta_outliers_Wardrobe == 1), find(alpha_outliers_Wardrobe == 1));
+
+% 將Wardrobe前60列存成新變數
+beta_mean_baseline_Wardrobe = beta_mean_Wardrobe(1:60);
+alpha_mean_baseline_Wardrobe = alpha_mean_Wardrobe(1:60);
+
+% %Wardrobe將1-60s和整段資料的離群值刪除
+beta_mean_baseline_Wardrobe(outliers_Wardrobe <= 60) = [];
+alpha_mean_baseline_Wardrobe(outliers_Wardrobe <= 60) = [];
+beta_mean_Wardrobe(outliers_Wardrobe) = [];
+score_Wardrobe(outliers_Wardrobe) = [];
+alpha_mean_Wardrobe(outliers_Wardrobe)=[];
+
+delete_data_Wardrobe = delete_data_Wardrobe + sum(outliers_Wardrobe);
+
+% %將baseline_Wardrobe長度和mean_Wardrobe一樣 但除了baseline範圍其他為0
+beta_mean_set0_Wardrobe = beta_mean_Wardrobe;
+beta_mean_set0_Wardrobe(length(beta_mean_baseline_Wardrobe) + 1:length(beta_mean_Wardrobe)) = 0;
+beta_mean_baseline_Wardrobe = beta_mean_set0_Wardrobe;
+
+alpha_mean_set0_Wardrobe = alpha_mean_Wardrobe;
+alpha_mean_set0_Wardrobe(length(alpha_mean_baseline_Wardrobe) + 1:length(alpha_mean_Wardrobe)) = 0;
+alpha_mean_baseline_Wardrobe = alpha_mean_set0_Wardrobe;
+
+
+%beta 刪除i+1為i 2倍的資料點
+% 初始化一個變數來存儲被刪掉的列的索引
+deleted_idx_Wardrobe = [];
+% 遍歷 beta_mean_baseline_Wardrobe，檢查是否下一列的值是目前列的值的2倍
+i_Wardrobe = 1;
+while i_Wardrobe < length(beta_mean_Wardrobe)
+    if beta_mean_Wardrobe(i_Wardrobe + 1) >= beta_mean_Wardrobe(i_Wardrobe) * 2 && ...
+            alpha_mean_Wardrobe(i_Wardrobe + 1) >= alpha_mean_Wardrobe(i_Wardrobe) * 2
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Wardrobe(end + 1) = i_Wardrobe + 1;
+        %刪除下一列
+        % fprintf('beta當前的值');
+        % disp(beta_mean_Wardrobe(i_Wardrobe));
+        % fprintf('beta被刪的值');
+        % disp(beta_mean_Wardrobe(i_Wardrobe + 1));
+        % fprintf('alpha當前的值');
+        % disp(alpha_mean_Wardrobe(i_Wardrobe));
+        % fprintf('alpha被刪的值');
+        % disp(alpha_mean_Wardrobe(i_Wardrobe + 1));
+        beta_mean_Wardrobe(i_Wardrobe + 1) = [];
+        beta_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        score_Wardrobe(i_Wardrobe + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Wardrobe = i_Wardrobe + 1;
+    end
+end
+
+delete_data_Wardrobe = delete_data_Wardrobe + length(deleted_idx_Wardrobe);
+disp('Wardrobe beta i+1 為i 超過2倍:');
+disp(length(deleted_idx_Wardrobe))
+
+
+deleted_idx_Wardrobe = [];
+% 刪除i+1為i-2 超過3.5倍的資料點
+i_Wardrobe = 3;
+while i_Wardrobe < length(beta_mean_Wardrobe)
+   if beta_mean_Wardrobe(i_Wardrobe + 1) >= beta_mean_Wardrobe(i_Wardrobe - 2) * 3.5 && ...
+       alpha_mean_Wardrobe(i_Wardrobe + 1) >= alpha_mean_Wardrobe(i_Wardrobe - 2) * 3.5
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Wardrobe(end + 1) = i_Wardrobe + 1;
+        % 刪除下一列
+        fprintf('beta當前的值');
+        disp(beta_mean_Wardrobe(i_Wardrobe + 1));
+        fprintf('beta被刪的值');
+        disp(beta_mean_Wardrobe(i_Wardrobe - 2));
+        fprintf('alpha當前的值');
+        disp(alpha_mean_Wardrobe(i_Wardrobe + 1));
+        fprintf('alpha被刪的值');
+        disp(alpha_mean_Wardrobe(i_Wardrobe - 2));
+        beta_mean_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_Wardrobe(i_Wardrobe + 1) = [];
+        beta_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        score_Wardrobe(i_Wardrobe + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Wardrobe = i_Wardrobe + 1;
+    end
+end
+
+delete_data_Wardrobe = delete_data_Wardrobe + length(deleted_idx_Wardrobe);
+disp('Wardrobe beta i+1為i-2 超過3.5倍：');
+disp(length(deleted_idx_Wardrobe));
+%
+
+beta_mean_baseline_Wardrobe(beta_mean_baseline_Wardrobe == 0) = [];
+alpha_mean_baseline_Wardrobe(alpha_mean_baseline_Wardrobe == 0) = [];
+
+%計算baseline平均
+beta_mean_mean_baseline_Wardrobe = mean(beta_mean_baseline_Wardrobe);
+alpha_mean_mean_baseline_Wardrobe = mean(alpha_mean_baseline_Wardrobe);
+
+%將baseline移除
+beta_mean_Wardrobe = beta_mean_Wardrobe(length(beta_mean_baseline_Wardrobe)+1:end);
+alpha_mean_Wardrobe = alpha_mean_Wardrobe(length(alpha_mean_baseline_Wardrobe)+1:end);
+score_Wardrobe = score_Wardrobe(length(beta_mean_baseline_Wardrobe)+1:end);
+
+
+%標準化
+beta_mean_Wardrobe = (beta_mean_Wardrobe - beta_mean_mean_baseline_Wardrobe) / beta_mean_mean_baseline_Wardrobe;
+alpha_mean_Wardrobe = (alpha_mean_Wardrobe - alpha_mean_mean_baseline_Wardrobe) / alpha_mean_mean_baseline_Wardrobe;
+
+%Wardrobe alpha 移動平均
+beta_mean_Wardrobe = movmean(beta_mean_Wardrobe, 16);
+alpha_mean_Wardrobe = movmean(alpha_mean_Wardrobe,16);
+
+% % fprintf('Wardrobe 刪除資料點總數：');
+% % disp(delete_data_Wardrobe);
+% % 
+% % fprintf('Wardrobe baseline扣除離群值後總數：');
+% % disp(length(beta_mean_baseline_Wardrobe));
+% % 
+% % fprintf('Wardrobe baseline離群值數量：');
+% % disp(60 - length(beta_mean_baseline_Wardrobe));
+% % 
+% % fprintf('Wardrobe 扣除baseline總數量：');
+% % disp(length(beta_mean_Wardrobe));
+% % 
+% % fprintf('Wardrobe 扣除baseline離群值數量：')
+% % disp(delete_data_Wardrobe - (60 - length(beta_mean_baseline_Wardrobe)))
+% 
+% 
+% % % 繪製調整後的折線圖Beta波
+% % time_for_s = 1:length(beta_slope_Wardrobe);
+% % figure;
+% % subplot(2,1,1);
+% % plot(time_for_s, beta_slope_Wardrobe, 'LineWidth', 2);
+% % title('Wardrobe 12~28Hz 斜率');
+% % xlabel('資料點');
+% % ylim([-0.05 0.05]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('斜率');
+% % grid on;
+% % 
+% % % 繪製調整後的折線圖Alpha波
+% % time_for_s = 1:length(alpha_slope_Wardrobe);
+% % subplot(2,1,2);
+% % plot(time_for_s,alpha_slope_Wardrobe, 'LineWidth', 2);
+% % title('Wardrobe 8~12Hz 斜率');
+% % xlabel('資料點');
+% % ylim([-0.05 0.05]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('斜率');
+% % grid on;
+% % 
+
+run Dro.m
+run Short.m
+
+beta_mean = [beta_mean_Wardrobe,beta_mean_Dro,beta_mean_Short];
+alpha_mean = [alpha_mean_Wardrobe];
+combined_data = [beta_mean'];  % 保留 Beta 值作為一維數據
+% 使用 kmeans 分群 (分成三群)
+rng(1); 
+num_clusters = 3;
+[idx, C] = kmeans(combined_data, num_clusters);
+
+colors = {[0.3010 0.7450 0.9330], [0.4660 0.6740 0.1880], [0.8500 0.3250 0.0980]}; % green, blue, red
+
+% 繪製二維散佈圖（Y軸設置為0）
+figure;
+hold on;
+for i = 1:num_clusters
+    scatter(combined_data(idx == i, 1), zeros(sum(idx == i), 1), 50, ...
+        'MarkerFaceColor', colors{i}, 'MarkerEdgeColor', colors{i});  % 固定Y軸為0
+end
+
+% 設定軸標籤
+title('K-means 客觀');
+xlabel('Beta能量');
+ylabel('Y');
+
+% 顯示群組中心並將Y軸設置為0
+scatter(C(:,1), zeros(size(C, 1), 1), 200, 'k', 'x', 'LineWidth', 2);
+
+for i = 1:num_clusters
+    % text(C(i, 1), 0, num2str(i), 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'k', ...
+    %      'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
+
+% 設定圖例
+legend({'有壓力', '普通', '驚嚇', '質心'}, 'Location', 'northeast');
+hold off;
+grid on;
+
+% 建立包含原始數據和分群結果的新矩陣
+clustered_data_orange = [combined_data, idx];
+
+% 將第2列中的數字1和3對調
+col = clustered_data_orange(:, 2);  % 提取第3列
+% 找出等於1和2的元素
+idx1 = (col == 1);  
+idx2 = (col == 2);  
+% 將1改為2，2改為1
+col(idx1) = 2;
+col(idx2) = 1;
+% 將修改後的第4列放回到矩陣中
+
+clustered_data_orange(:, 2) = col;
+num_ones = sum(clustered_data_orange(:, 2) == 1);
+num_twos = sum(clustered_data_orange(:, 2) == 2);
+num_threes = sum(clustered_data_orange(:, 2) == 3);
+
+
+%%%%%%
+beta_mean = [beta_mean_Wardrobe,beta_mean_Dro,beta_mean_Short];
+alpha_mean = [alpha_mean_Wardrobe];
+score_Wardrobe = [score_Wardrobe,score_Dro,score_Short];
+score_Wardrobe(score_Wardrobe == 0) = 1;
+combined_data1 = [beta_mean',score_Wardrobe'];
+% 使用 kmeans 分群 (分成三群)
+rng(100); 
+num_clusters = 3;
+[idx1, C1] = kmeans(combined_data1, num_clusters);
+
+colors = {[0.3010 0.7450 0.9330],[0.4660 0.6740 0.1880],[0.8500 0.3250 0.0980]}; % green,blue,red
+
+% 繪製三維散佈圖
+figure;
+hold on;
+for i = 1:num_clusters
+    scatter(combined_data1(idx1 == i, 1), combined_data1(idx1 == i, 2), 50, ...
+        'MarkerFaceColor', colors{i}, 'MarkerEdgeColor', colors{i});
+end
+
+% 設定軸標籤
+title('Wardrobe K-means with score');
+xlabel('Beta');
+% ylabel('Alpha');
+
+% 顯示群組中心並用分類編號標記
+scatter3(C1(:,1), C1(:,2), 200, 'k', 'x', 'LineWidth', 2); % 顯示中心點，使用 'o' 表示
+for i = 1:num_clusters
+    % text(C1(i,1), C1(i,2), num2str(i), 'FontSize', 30, 'FontWeight', 'bold', 'Color', 'k'); % 使用對應的編號作為標籤
+end
+
+legend({'有壓力', '驚嚇', '普通', '質心'},'Location', 'northeast');
+hold off;
+grid on;
+view(2);
+clustered_data_orange1 = [combined_data1, idx1]; % 新矩陣包含原始數據和分群結果
+
+% 將第3列中的數字1和2對調
+col = clustered_data_orange1(:, 3);  % 提取第3列
+% 找出等於1和2的元素
+idx1 = (col == 1);  
+idx2 = (col == 3);  
+% 將1改為2，2改為1
+col(idx1) = 3;
+col(idx2) = 1;
+
+% 將修改後的第4列放回到矩陣中
+clustered_data_orange1(:, 3) = col;
+
+% 將第3列中的數字1和2對調
+col = clustered_data_orange1(:, 3);  % 提取第3列
+% 找出等於1和2的元素
+idx1 = (col == 2);  
+idx2 = (col == 3);  
+% 將1改為2，2改為1
+col(idx1) = 3;
+col(idx2) = 2;
+
+% 將修改後的第4列放回到矩陣中
+clustered_data_orange1(:, 3) = col;
+num_ones1 = sum(clustered_data_orange1(:, 3) == 1);
+num_twos1 = sum(clustered_data_orange1(:, 3) == 2);
+num_threes1 = sum(clustered_data_orange1(:, 3) == 3);
+
+
+% 提取分群標籤 (假設最後一列是分群結果)
+labels1 = clustered_data_orange1(:, end); % clustered_data_orange1 的分群結果
+labels2 = clustered_data_orange(:, end);  % clustered_data_orange 的分群結果
+
+% 計算準確率
+num_correct = sum(labels1 == labels2);   % 計算相同標籤的數目
+total_samples = length(labels1);         % 樣本總數
+accuracy = num_correct / total_samples;  % 計算準確率
+fprintf('準確率: %.2f%%\n', accuracy * 100);
+
+% 生成混淆矩陣
+conf_matrix = confusionmat(labels1, labels2);
+disp('混淆矩陣:');
+disp(conf_matrix);
+
+% 假设 labels1 是真实标签，labels2 是预测标签
+conf_matrix = confusionmat(labels1, labels2);
+
+% 定义类别标签，按正确的顺序显示
+categories = {'普通', '有壓力', '驚嚇'}; % 根據需要調整順序
+
+% 绘制混淆矩阵并指定类别标签
+figure;
+cm = confusionchart(conf_matrix, categories);
+
+% 设置颜色图
+colormap('winter');  % 使用类似蓝色调的颜色图
+
+% 自定义标题和轴标签
+cm.Title = 'Confusion Matrix';  % 标题
+cm.XLabel = 'Predicted Labels';  % X轴标签
+cm.YLabel = 'True Labels';  % Y轴标签
+
+% 可选：调整字体大小
+cm.FontSize = 12;  % 调整字体大小，使显示更清晰
+
