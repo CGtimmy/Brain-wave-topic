@@ -1736,3 +1736,436 @@ cm.YLabel = 'True Labels';  % Y轴标签
 % 可选：调整字体大小
 cm.FontSize = 12;  % 调整字体大小，使显示更清晰
 
+
+close all
+%第三次腦波數據(Wardrobe) 何翊 2CH CH1:CZ CH2:FZ
+data_Wardrobe = load('/Users/hoyi/Desktop/rrr/mat檔/20240715131051_test_bleEXGdata_Wardrobe.mat');
+data_Wardrobe = data_Wardrobe.data;
+data_Wardrobe = data_Wardrobe';
+cz_signal_Wardrobe = data_Wardrobe(:, 1); 
+fz_signal_Wardrobe = data_Wardrobe(:, 2); 
+fs = 250;
+window = hamming(250);
+noverlap = 125; 
+nfft = 256; 
+total_time_Wardrobe = length(cz_signal_Wardrobe) / fs;
+fprintf('Wardrobe整段時間: %.f 秒\n', total_time_Wardrobe);
+% fprintf('Wardrobe的data長度: %.f\n', size(cz_signal_Wardrobe));
+
+% Wardrobe在Cz的STFT
+[cz_s_Wardrobe, cz_f_Wardrobe, cz_t_Wardrobe, cz_p_Wardrobe] = spectrogram(cz_signal_Wardrobe, window, noverlap, nfft, fs,'Power');
+[fz_s_Wardrobe, fz_f_Wardrobe, fz_t_Wardrobe, fz_p_Wardrobe] = spectrogram(fz_signal_Wardrobe, window, noverlap, nfft, fs,'Power');
+start_time_Wardrobe = 0;
+end_time_Wardrobe = total_time_Wardrobe;
+
+% % Wardrobe在Cz的頻譜圖
+% figure;
+% subplot(2,1,1);
+% surf(cz_t_Wardrobe, cz_f_Wardrobe, 10*log10(abs(cz_p_Wardrobe)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Wardrobe end_time_Wardrobe])  %秒數區段
+% xticks(start_time_Wardrobe:20:end_time_Wardrobe) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('CZ Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+% 
+% % Wardrobe在fz的頻譜圖
+% subplot(2,1,2);
+% surf(fz_t_Wardrobe, fz_f_Wardrobe, 10*log10(abs(fz_p_Wardrobe)), 'EdgeColor', 'none');
+% axis tight;
+% ylim([0 60]);
+% xlim([start_time_Wardrobe end_time_Wardrobe])  %秒數區段
+% xticks(start_time_Wardrobe:20:end_time_Wardrobe) %每幾秒顯示一個刻度
+% view(0, 90);
+% colorbar;
+% title('fz Spectrogram');
+% xlabel('Time (sec)');
+% ylabel('Frequency (Hz)');
+% caxis([-10 20]);
+% colormap(jet);
+% 
+
+score_Wardrobe(1:60) = 1;
+score_Wardrobe(61:95) = 3;
+score_Wardrobe(106:109) = 4;
+score_Wardrobe(110:119) = 3;
+score_Wardrobe(120:125) = 2;
+score_Wardrobe(126:128) = 3;
+score_Wardrobe(129:149) = 4;
+score_Wardrobe(150:152) = 5;
+score_Wardrobe(153:158) = 4;
+score_Wardrobe(159:210) = 5;
+score_Wardrobe(211:235) = 4;
+score_Wardrobe(236:244) = 5;
+score_Wardrobe(245:255) = 6;
+score_Wardrobe(256:259) = 7;
+score_Wardrobe(260:270) = 4;
+score_Wardrobe(271:310) = 3;
+score_Wardrobe(311:340) = 5;
+score_Wardrobe(341:370) = 4;
+score_Wardrobe(371:390) = 3;
+score_Wardrobe(391:426) = 4;
+
+%Beta波範圍
+beta_freg_idx_Wardrobe = (cz_f_Wardrobe >= 12) & (cz_f_Wardrobe <= 28);
+beta_cz_s_abs_Wardrobe = abs(cz_s_Wardrobe);
+beta_selected_power_Wardrobe = beta_cz_s_abs_Wardrobe(beta_freg_idx_Wardrobe, :);
+beta_mean_Wardrobe = mean(beta_selected_power_Wardrobe,1);
+
+%Alpha波範圍
+alpha_freg_idx_Wardrobe = (cz_f_Wardrobe >= 8) & (cz_f_Wardrobe <= 12);
+alpha_cz_s_abs_Wardrobe = abs(cz_s_Wardrobe);
+alpha_selected_power_Wardrobe = alpha_cz_s_abs_Wardrobe(alpha_freg_idx_Wardrobe, :);
+alpha_mean_Wardrobe = mean(alpha_selected_power_Wardrobe,1);
+
+
+% 如果Wardrobe的長度是奇數，刪除最後5個元素，若是偶數，刪除最後4個元素
+if mod(length(beta_mean_Wardrobe), 2) ~= 0
+    beta_mean_Wardrobe(length(beta_mean_Wardrobe)-8:end) = [];
+    alpha_mean_Wardrobe(length(alpha_mean_Wardrobe)-8:end) = [];
+else 
+    beta_mean_Wardrobe(length(beta_mean_Wardrobe)-7:end) = [];
+    alpha_mean_Wardrobe(length(alpha_mean_Wardrobe)-7:end) = [];
+end
+
+% 將Wardrobe中的每兩列數值平均
+beta_mean_Wardrobe = mean(reshape(beta_mean_Wardrobe, 2, []), 1);
+alpha_mean_Wardrobe = mean(reshape(alpha_mean_Wardrobe, 2, []), 1);
+
+total_data_Wardrobe = length(beta_mean_Wardrobe);
+fprintf('Wardrobe資料點總數量:');
+disp(total_data_Wardrobe);
+% 
+% beta_mean_Wardrobe = movmean(beta_mean_Wardrobe, 10);
+% alpha_mean_Wardrobe = movmean(alpha_mean_Wardrobe,10);
+% 
+% 
+% % 繪製調整後的折線圖Beta波
+% time_for_s = 1:length(beta_mean_Wardrobe);
+% figure;
+% subplot(2,1,1);
+% plot(time_for_s, beta_mean_Wardrobe, 'LineWidth', 2);
+% title('Wardrobe 12~28Hz 斜率');
+% xlabel('資料點');
+% ylim([10 100]);
+% xlim([0 length(time_for_s)]);  % 秒數區段
+% xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% ylabel('斜率');
+% grid on;
+% 
+% % 繪製調整後的折線圖Alpha波
+% time_for_s = 1:length(alpha_mean_Wardrobe);
+% subplot(2,1,2);
+% plot(time_for_s,alpha_mean_Wardrobe, 'LineWidth', 2);
+% title('Wardrobe 8~12Hz 斜率');
+% xlabel('資料點');
+% ylim([10 150]);
+% xlim([0 length(time_for_s)]);  % 秒數區段
+% xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% ylabel('斜率');
+% grid on;
+
+
+delete_data_Wardrobe = 0;
+
+% 計算 Q1, Q3 和 IQR
+beta_Q1_Wardrobe= prctile(beta_mean_Wardrobe, 25);  % 第 25 百分位數
+beta_Q3_Wardrobe = prctile(beta_mean_Wardrobe, 75);  % 第 75 百分位數
+beta_IQR_Wardrobe= beta_Q3_Wardrobe - beta_Q1_Wardrobe;  % 四分位距
+
+alpha_Q1_Wardrobe = prctile(alpha_mean_Wardrobe, 25);  % 第 25 百分位數
+alpha_Q3_Wardrobe = prctile(alpha_mean_Wardrobe, 75);  % 第 75 百分位數
+alpha_IQR_Wardrobe = alpha_Q3_Wardrobe - alpha_Q1_Wardrobe;  % 四分位距
+
+% 計算離群值上下界
+beta_lower_bound_Wardrobe  = beta_Q1_Wardrobe- 1.5 * beta_IQR_Wardrobe;
+beta_upper_bound_Wardrobe  = beta_Q3_Wardrobe + 1.5 * beta_IQR_Wardrobe;
+
+alpha_lower_bound_Wardrobe = alpha_Q1_Wardrobe - 1.5 * alpha_IQR_Wardrobe;
+alpha_upper_bound_Wardrobe = alpha_Q3_Wardrobe + 1.5 * alpha_IQR_Wardrobe;
+
+% 判斷哪些數值為離群值
+beta_outliers_Wardrobe = (beta_mean_Wardrobe < beta_lower_bound_Wardrobe ) | (beta_mean_Wardrobe > beta_upper_bound_Wardrobe );
+alpha_outliers_Wardrobe = (alpha_mean_Wardrobe < alpha_lower_bound_Wardrobe) | (alpha_mean_Wardrobe > alpha_upper_bound_Wardrobe);
+outliers_Wardrobe = intersect(find(beta_outliers_Wardrobe == 1), find(alpha_outliers_Wardrobe == 1));
+
+% 將Wardrobe前60列存成新變數
+beta_mean_baseline_Wardrobe = beta_mean_Wardrobe(1:60);
+alpha_mean_baseline_Wardrobe = alpha_mean_Wardrobe(1:60);
+
+% %Wardrobe將1-60s和整段資料的離群值刪除
+beta_mean_baseline_Wardrobe(outliers_Wardrobe <= 60) = [];
+alpha_mean_baseline_Wardrobe(outliers_Wardrobe <= 60) = [];
+beta_mean_Wardrobe(outliers_Wardrobe) = [];
+score_Wardrobe(outliers_Wardrobe) = [];
+alpha_mean_Wardrobe(outliers_Wardrobe)=[];
+
+delete_data_Wardrobe = delete_data_Wardrobe + sum(outliers_Wardrobe);
+
+% %將baseline_Wardrobe長度和mean_Wardrobe一樣 但除了baseline範圍其他為0
+beta_mean_set0_Wardrobe = beta_mean_Wardrobe;
+beta_mean_set0_Wardrobe(length(beta_mean_baseline_Wardrobe) + 1:length(beta_mean_Wardrobe)) = 0;
+beta_mean_baseline_Wardrobe = beta_mean_set0_Wardrobe;
+
+alpha_mean_set0_Wardrobe = alpha_mean_Wardrobe;
+alpha_mean_set0_Wardrobe(length(alpha_mean_baseline_Wardrobe) + 1:length(alpha_mean_Wardrobe)) = 0;
+alpha_mean_baseline_Wardrobe = alpha_mean_set0_Wardrobe;
+
+
+%beta 刪除i+1為i 2倍的資料點
+% 初始化一個變數來存儲被刪掉的列的索引
+deleted_idx_Wardrobe = [];
+% 遍歷 beta_mean_baseline_Wardrobe，檢查是否下一列的值是目前列的值的2倍
+i_Wardrobe = 1;
+while i_Wardrobe < length(beta_mean_Wardrobe)
+    if beta_mean_Wardrobe(i_Wardrobe + 1) >= beta_mean_Wardrobe(i_Wardrobe) * 2 && ...
+            alpha_mean_Wardrobe(i_Wardrobe + 1) >= alpha_mean_Wardrobe(i_Wardrobe) * 2
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Wardrobe(end + 1) = i_Wardrobe + 1;
+        %刪除下一列
+        % fprintf('beta當前的值');
+        % disp(beta_mean_Wardrobe(i_Wardrobe));
+        % fprintf('beta被刪的值');
+        % disp(beta_mean_Wardrobe(i_Wardrobe + 1));
+        % fprintf('alpha當前的值');
+        % disp(alpha_mean_Wardrobe(i_Wardrobe));
+        % fprintf('alpha被刪的值');
+        % disp(alpha_mean_Wardrobe(i_Wardrobe + 1));
+        beta_mean_Wardrobe(i_Wardrobe + 1) = [];
+        beta_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        score_Wardrobe(i_Wardrobe + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Wardrobe = i_Wardrobe + 1;
+    end
+end
+
+delete_data_Wardrobe = delete_data_Wardrobe + length(deleted_idx_Wardrobe);
+disp('Wardrobe beta i+1 為i 超過2倍:');
+disp(length(deleted_idx_Wardrobe))
+
+
+deleted_idx_Wardrobe = [];
+% 刪除i+1為i-2 超過3.5倍的資料點
+i_Wardrobe = 3;
+while i_Wardrobe < length(beta_mean_Wardrobe)
+   if beta_mean_Wardrobe(i_Wardrobe + 1) >= beta_mean_Wardrobe(i_Wardrobe - 2) * 3.5 && ...
+       alpha_mean_Wardrobe(i_Wardrobe + 1) >= alpha_mean_Wardrobe(i_Wardrobe - 2) * 3.5
+        % 如果條件滿足，記錄被刪除的列的索引
+        deleted_idx_Wardrobe(end + 1) = i_Wardrobe + 1;
+        % 刪除下一列
+        fprintf('beta當前的值');
+        disp(beta_mean_Wardrobe(i_Wardrobe + 1));
+        fprintf('beta被刪的值');
+        disp(beta_mean_Wardrobe(i_Wardrobe - 2));
+        fprintf('alpha當前的值');
+        disp(alpha_mean_Wardrobe(i_Wardrobe + 1));
+        fprintf('alpha被刪的值');
+        disp(alpha_mean_Wardrobe(i_Wardrobe - 2));
+        beta_mean_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_Wardrobe(i_Wardrobe + 1) = [];
+        beta_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        alpha_mean_baseline_Wardrobe(i_Wardrobe + 1) = [];
+        score_Wardrobe(i_Wardrobe + 1) = [];
+        % 不移動i, 以便重新檢查新的下一列
+    else
+        % 只有當沒有刪除列時，才移動到下一個元素
+        i_Wardrobe = i_Wardrobe + 1;
+    end
+end
+
+delete_data_Wardrobe = delete_data_Wardrobe + length(deleted_idx_Wardrobe);
+disp('Wardrobe beta i+1為i-2 超過3.5倍：');
+disp(length(deleted_idx_Wardrobe));
+%
+
+beta_mean_baseline_Wardrobe(beta_mean_baseline_Wardrobe == 0) = [];
+alpha_mean_baseline_Wardrobe(alpha_mean_baseline_Wardrobe == 0) = [];
+
+%計算baseline平均
+beta_mean_mean_baseline_Wardrobe = mean(beta_mean_baseline_Wardrobe);
+alpha_mean_mean_baseline_Wardrobe = mean(alpha_mean_baseline_Wardrobe);
+
+%將baseline移除
+beta_mean_Wardrobe = beta_mean_Wardrobe(length(beta_mean_baseline_Wardrobe)+1:end);
+alpha_mean_Wardrobe = alpha_mean_Wardrobe(length(alpha_mean_baseline_Wardrobe)+1:end);
+score_Wardrobe = score_Wardrobe(length(beta_mean_baseline_Wardrobe)+1:end);
+
+
+%標準化
+beta_mean_Wardrobe = (beta_mean_Wardrobe - beta_mean_mean_baseline_Wardrobe) / beta_mean_mean_baseline_Wardrobe;
+alpha_mean_Wardrobe = (alpha_mean_Wardrobe - alpha_mean_mean_baseline_Wardrobe) / alpha_mean_mean_baseline_Wardrobe;
+
+%Wardrobe alpha 移動平均
+beta_mean_Wardrobe = movmean(beta_mean_Wardrobe, 16);
+alpha_mean_Wardrobe = movmean(alpha_mean_Wardrobe,16);
+
+% % fprintf('Wardrobe 刪除資料點總數：');
+% % disp(delete_data_Wardrobe);
+% % 
+% % fprintf('Wardrobe baseline扣除離群值後總數：');
+% % disp(length(beta_mean_baseline_Wardrobe));
+% % 
+% % fprintf('Wardrobe baseline離群值數量：');
+% % disp(60 - length(beta_mean_baseline_Wardrobe));
+% % 
+% % fprintf('Wardrobe 扣除baseline總數量：');
+% % disp(length(beta_mean_Wardrobe));
+% % 
+% % fprintf('Wardrobe 扣除baseline離群值數量：')
+% % disp(delete_data_Wardrobe - (60 - length(beta_mean_baseline_Wardrobe)))
+% 
+% 
+% % % 繪製調整後的折線圖Beta波
+% % time_for_s = 1:length(beta_slope_Wardrobe);
+% % figure;
+% % subplot(2,1,1);
+% % plot(time_for_s, beta_slope_Wardrobe, 'LineWidth', 2);
+% % title('Wardrobe 12~28Hz 斜率');
+% % xlabel('資料點');
+% % ylim([-0.05 0.05]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('斜率');
+% % grid on;
+% % 
+% % % 繪製調整後的折線圖Alpha波
+% % time_for_s = 1:length(alpha_slope_Wardrobe);
+% % subplot(2,1,2);
+% % plot(time_for_s,alpha_slope_Wardrobe, 'LineWidth', 2);
+% % title('Wardrobe 8~12Hz 斜率');
+% % xlabel('資料點');
+% % ylim([-0.05 0.05]);
+% % xlim([0 length(time_for_s)]);  % 秒數區段
+% % xticks(0:5:length(time_for_s));  % 每幾秒顯示一個刻度
+% % ylabel('斜率');
+% % grid on;
+% % 
+
+run Bus375.m
+run Bloody.m
+run Dont.m
+
+beta_mean = [beta_mean_Wardrobe,beta_mean_Bus375,beta_mean_Bloody];
+alpha_mean = [alpha_mean_Wardrobe,alpha_mean_Bus375,alpha_mean_Bloody];
+combined_data = [beta_mean',alpha_mean'];  % 保留 Beta 值作為一維數據
+% 使用 kmeans 分群 (分成三群)
+num_clusters = 3;
+% Best_C = [0.1270, -0.0410; 
+%          0.4758, 0.4371; 
+%          0.1792, -0.3460];
+[idx, C] = kmeans(combined_data, num_clusters, 'Replicates', 200);
+
+
+colors = {[0.3010 0.7450 0.9330], [0.4660 0.6740 0.1880], [0.8500 0.3250 0.0980]}; % green, blue, red
+
+% 繪製二維散佈圖，Y軸使用 alpha_mean 的數據
+figure;
+hold on;
+for i = 1:num_clusters
+    scatter(combined_data(idx == i, 1), combined_data(idx == i, 2), 50, ...
+        'MarkerFaceColor', colors{i}, 'MarkerEdgeColor', colors{i});
+end
+
+% 設定軸標籤
+title('K-means');
+xlabel('beta');
+ylabel('alpha');
+
+% 顯示群組中心並將Y軸設置為0
+scatter(C(:,1),C(:,2) , 200, 'k', 'x', 'LineWidth', 2);
+
+for i = 1:num_clusters
+    text(C(i, 1), C(i, 2), num2str(i), 'FontSize', 12, 'FontWeight', 'bold', 'Color', 'k', ...
+         'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
+
+axis equal;
+
+% 獲取 X 和 Y 軸數據的最小值和最大值
+min_val = min([min(combined_data(:, 1)), min(combined_data(:, 2))]);
+max_val = max([max(combined_data(:, 1)), max(combined_data(:, 2))]);
+
+% 設置 X 和 Y 軸的範圍相同
+axis([min_val max_val min_val max_val]);
+
+% 繪製 x = y 的線
+hold on;
+plot([min_val max_val], [min_val max_val], 'k--', 'LineWidth', 1.5);  % 使用虛線來繪製 x = y 的線
+hold off;
+
+% 設定圖例
+legend({'有壓力','驚嚇', '普通', '質心'}, 'Location', 'northeast');
+hold off;
+grid on;
+
+score_Con = [score_Wardrobe,score_Bus375,score_Bloody];
+% 建立包含原始數據和分群結果的新矩陣
+clustered_data_orange = [combined_data, idx,score_Con'];
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 4));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 4));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 4));
+
+% 顯示結果
+disp(['群組 1 的 score 的平均值: ', num2str(mean_value_group1)]);
+disp(['群組 2 的 score 的平均值: ', num2str(mean_value_group2)]);
+disp(['群組 3 的 score 的平均值: ', num2str(mean_value_group3)]);
+
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 1));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 1));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 1));
+
+% 顯示結果
+disp(['群組 1 的 beta 的平均值: ', num2str(mean_value_group1)]);
+disp(['群組 2 的 beta 的平均值: ', num2str(mean_value_group2)]);
+disp(['群組 3 的 beta 的平均值: ', num2str(mean_value_group3)]);
+
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 2));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 2));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 2));
+
+% 顯示結果
+disp(['群組 1 的 alpha 的平均值: ', num2str(mean_value_group1)]);
+disp(['群組 2 的 alpha 的平均值: ', num2str(mean_value_group2)]);
+disp(['群組 3 的 alpha 的平均值: ', num2str(mean_value_group3)]);
+
+
+% 假設 score_Con 包含數字 1 到 7
+num_classes = 7; % 假設類別是從 1 到 7
+for group = 1:num_clusters
+    % 找到屬於當前群組的數據
+    group_data = clustered_data_orange(clustered_data_orange(:, 3) == group, 4);
+    
+    % 計算各類別的計數
+    counts = histcounts(group_data, 1:num_classes+1); % 1:num_classes+1 用來分隔 1-7 的類別
+
+    % 顯示結果
+    disp(['群組 ' num2str(group) ' 的每個類別的計數:']);
+    for i = 1:num_classes
+        disp(['類別 ' num2str(i) ': ' num2str(counts(i))]);
+    end
+end
+
