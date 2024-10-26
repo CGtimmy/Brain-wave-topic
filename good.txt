@@ -1,0 +1,304 @@
+run Wardrobe.m
+run Bus375.m
+run Bloody.m
+run Dont.m
+% run Tai.m
+run Cus.m
+run Girl.m
+run Elevator.m
+run Camera.m
+score_Con = [score_Wardrobe,score_Bus375,score_Bloody,score_Dont,score_Cus,score_Girl,score_Elevator,score_Camera];
+beta_mean = [beta_mean_Wardrobe,beta_mean_Bus375,beta_mean_Bloody,beta_mean_Dont,beta_mean_Cus,beta_mean_Girl,beta_mean_Elevator,beta_mean_Camera];
+alpha_mean = [alpha_mean_Wardrobe,alpha_mean_Bus375,alpha_mean_Bloody,alpha_mean_Dont,alpha_mean_Cus,alpha_mean_Girl,alpha_mean_Elevator,alpha_mean_Camera];
+combined_data = [beta_mean',alpha_mean'];  % 保留 Beta 值作為一維數據
+% 使用 kmeans 分群 (分成三群)
+
+% 假設 combined_data 是你已經合併好的數據
+data_size = size(combined_data, 1);  % 獲取數據的總行數
+num_clusters = 6;
+% num_folds = 5;  % 5 折交叉驗證
+% 
+% % 生成隨機索引來進行交叉驗證
+% indices = crossvalind('Kfold', data_size, num_folds);
+% 
+% % 初始化用來儲存結果的變量
+% train_results = [];
+% test_results = [];
+% total_loss_train = 0;
+% total_loss_test = 0;
+% total_accuracy_train = 0;
+% total_accuracy_test = 0;
+% 
+% % 進行 5 折交叉驗證
+% for fold = 1:num_folds
+%     % 分割訓練集和測試集
+%     train_indices = (indices ~= fold);
+%     test_indices = (indices == fold);
+% 
+%     combined_data = combined_data(train_indices, 1:2);  % 80% 訓練數據
+%     test_data = combined_data(test_indices, 1:2);  % 20% 測試數據
+%     score_Con = combined_data(train_indices, 3);
+%     score_Con_test = combined_data(test_indices, 3);
+% 
+%     % 在訓練集上使用 K-means 進行分群
+%     [idx, C, sumd_train] = kmeans(combined_data, num_clusters, 'Replicates', 200);
+% 
+%     % 將質心用於測試數據，使用 knnsearch 將測試數據分配到最近的質心
+%     idx_test = knnsearch(C, test_data);
+% 
+%     % 計算訓練集和測試集的總損失
+%     total_loss_train = total_loss_train + sum(sumd_train);  % 訓練集損失
+%     sumd_test = sum(pdist2(test_data, C(idx_test, :)).^2);  % 測試集損失
+%     total_loss_test = total_loss_test + sum(sumd_test);
+% 
+%     % 訓練集準確率
+%     correct_train = sum(idx == score_Con);  % 假設K-means的結果與真實標籤進行對比
+%     accuracy_train = correct_train / length(score_Con);
+%     total_accuracy_train = total_accuracy_train + accuracy_train;
+% 
+%     % 測試集準確率
+%     correct_test = sum(idx_test == score_Con_test);
+%     accuracy_test = correct_test / length(score_Con_test);
+%     total_accuracy_test = total_accuracy_test + accuracy_test;
+% 
+%     % 顯示每次交叉驗證的結果
+%     disp(['折數: ', num2str(fold)]);
+%     disp(['訓練集損失: ', num2str(sum(sumd_train))]);
+%     disp(['測試集損失: ', num2str(sumd_test)]);
+%     disp(['訓練集準確率: ', num2str(accuracy_train)]);
+%     disp(['測試集準確率: ', num2str(accuracy_test)]);
+% end
+% 
+% % 計算最終的平均損失和準確率
+% mean_loss_train = total_loss_train / num_folds;
+% mean_loss_test = total_loss_test / num_folds;
+% mean_accuracy_train = total_accuracy_train / num_folds;
+% mean_accuracy_test = total_accuracy_test / num_folds;
+% 
+% % 顯示最終結果
+% disp('訓練集的平均損失函數:');
+% disp(mean_loss_train);
+% disp('測試集的平均損失函數:');
+% disp(mean_loss_test);
+% disp('訓練集的平均準確率:');
+% disp(mean_accuracy_train);
+% disp('測試集的平均準確率:');
+% disp(mean_accuracy_test);
+
+% 將數據拆分為訓練集和測試集
+num_clusters = 6;
+% Best_C = [0.1270, -0.0410; 
+%          0.4758, 0.4371; 
+%          0.1792, -0.3460];
+[idx, C] = kmeans(combined_data, num_clusters, 'Replicates', 200);
+
+
+colors = {[0.3010 0.7450 0.9330],  % 蓝色
+          [0.4660 0.6740 0.1880],  % 绿色
+          [0.8500 0.3250 0.0980],  % 红色
+          [0.9290 0.6940 0.1250],  % 黄色
+          [0.4940 0.1840 0.5560],  % 紫色
+          [0.6350 0.0780 0.1840]}; % 深红色
+
+% 繪製二維散佈圖，Y軸使用 alpha_mean 的數據
+figure;
+hold on;
+for i = 1:num_clusters
+    scatter(combined_data(idx == i, 1), combined_data(idx == i, 2), 50, ...
+        'MarkerFaceColor', colors{i}, 'MarkerEdgeColor', colors{i});
+end
+
+% 設定軸標籤
+title('K-means');
+xlabel('beta');
+ylabel('alpha');
+
+% 顯示群組中心並將Y軸設置為0
+scatter(C(:,1),C(:,2) , 200, 'k', 'x', 'LineWidth', 2);
+
+for i = 1:num_clusters
+    text(C(i, 1), C(i, 2), num2str(i), 'FontSize', 25, 'FontWeight', 'bold', 'Color', 'k', ...
+         'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
+
+axis equal;
+
+% 獲取 X 和 Y 軸數據的最小值和最大值
+min_val = min([min(combined_data(:, 1)), min(combined_data(:, 2))]);
+max_val = max([max(combined_data(:, 1)), max(combined_data(:, 2))]);
+
+% 設置 X 和 Y 軸的範圍相同
+axis([min_val max_val min_val max_val]);
+
+% 設定圖例
+legend({'普通','害怕', '有壓力', '質心'}, 'Location', 'northeast');
+hold off;
+grid on;
+
+
+% 建立包含原始數據和分群結果的新矩陣
+clustered_data_orange = [combined_data, idx,score_Con'];
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 4));
+
+% 計算群組 1 中第四列的數據減去均值後，除以該群組中的項數
+group1_data = clustered_data_orange(clustered_data_orange(:, 3) == 1, 4);  % 群組 1 的第四列
+group1_data = mean(abs(group1_data - mean_value_group1));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 4));
+
+group2_data = clustered_data_orange(clustered_data_orange(:, 3) == 2, 4);  % 群組 1 的第四列
+group2_data = mean(abs(group2_data - mean_value_group2));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 4));
+group3_data = clustered_data_orange(clustered_data_orange(:, 3) == 3, 4);  % 群組 1 的第四列
+group3_data = mean(abs(group3_data - mean_value_group3));
+
+mean_value_group4 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 4, 4));
+mean_value_group5 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 5, 4));
+mean_value_group6 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 6, 4));
+
+% 顯示結果
+disp(['訓練群組 1 的 score 的平均值: ', num2str(mean_value_group1)]);
+disp(['訓練群組 2 的 score 的平均值: ', num2str(mean_value_group2)]);
+disp(['訓練群組 3 的 score 的平均值: ', num2str(mean_value_group3)]);
+disp(['訓練群組 4 的 score 的平均值: ', num2str(mean_value_group4)]);
+disp(['訓練群組 5 的 score 的平均值: ', num2str(mean_value_group5)]);
+disp(['訓練群組 6 的 score 的平均值: ', num2str(mean_value_group6)]);
+
+% % 顯示結果
+% disp(['群組 1 的第四列的數據減去均值後的標準化值:']);
+% disp(normalized_group1);
+% 
+% disp(['群組 2 的第四列的數據減去均值後的標準化值:']);
+% disp(normalized_group2);
+% 
+% disp(['群組 3 的第四列的數據減去均值後的標準化值:']);
+% disp(normalized_group3);
+
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 1));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 1));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 1));
+
+mean_value_group4 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 4, 1));
+mean_value_group5 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 5, 1));
+mean_value_group6 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 6, 1));
+
+% 顯示結果
+disp(['訓練群組 1 的 beta 的平均值: ', num2str(mean_value_group1)]);
+disp(['訓練群組 2 的 beta 的平均值: ', num2str(mean_value_group2)]);
+disp(['訓練群組 3 的 beta 的平均值: ', num2str(mean_value_group3)]);
+disp(['訓練群組 4 的 beta 的平均值: ', num2str(mean_value_group4)]);
+disp(['訓練群組 5 的 beta 的平均值: ', num2str(mean_value_group5)]);
+disp(['訓練群組 6 的 beta 的平均值: ', num2str(mean_value_group6)]);
+
+% 當第三列為 1 時，計算第四列對應數字的平均值
+mean_value_group1 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 1, 2));
+
+% 當第三列為 2 時，計算第四列對應數字的平均值
+mean_value_group2 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 2, 2));
+
+% 當第三列為 3 時，計算第四列對應數字的平均值
+mean_value_group3 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 3, 2));
+mean_value_group4 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 4, 2));
+mean_value_group5 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 5, 2));
+mean_value_group6 = mean(clustered_data_orange(clustered_data_orange(:, 3) == 6, 2));
+
+% 顯示結果
+disp(['訓練群組 1 的 alpha 的平均值: ', num2str(mean_value_group1)]);
+disp(['訓練群組 2 的 alpha 的平均值: ', num2str(mean_value_group2)]);
+disp(['訓練群組 3 的 alpha 的平均值: ', num2str(mean_value_group3)]);
+disp(['訓練群組 4 的 alpha 的平均值: ', num2str(mean_value_group4)]);
+disp(['訓練群組 5 的 alpha 的平均值: ', num2str(mean_value_group5)]);
+disp(['訓練群組 6 的 alpha 的平均值: ', num2str(mean_value_group6)]);
+
+% % 假設 score_Con 包含數字 1 到 7
+% num_classes = 7; % 假設類別是從 1 到 7
+% for group = 1:num_clusters
+%     % 找到屬於當前群組的數據
+%     group_data = clustered_data_orange(clustered_data_orange(:, 3) == group, 4);
+% 
+%     % 計算各類別的計數
+%     counts = histcounts(group_data, 1:num_classes+1); % 1:num_classes+1 用來分隔 1-7 的類別
+% 
+%     % 顯示結果
+%     disp(['群組 ' num2str(group) ' 的每個類別的計數:']);
+%     for i = 1:num_classes
+%         disp(['類別 ' num2str(i) ': ' num2str(counts(i))]);
+%     end
+% end
+% % 
+
+% 
+% % 顯示訓練質心
+% disp('訓練數據的質心:');
+% disp(C);
+combined_data = [beta_mean',alpha_mean',score_Con']; 
+% 假設 combined_data 是你已經合併好的數據
+data_size = size(combined_data, 1);  % 獲取數據的總行數
+num_clusters = 6;
+num_folds = 10;  % 5 折交叉驗證
+
+% 生成隨機索引來進行交叉驗證
+indices = crossvalind('Kfold', data_size, num_folds);
+
+% 初始化用來儲存結果的變量
+train_results = [];
+test_results = [];
+
+% 進行 5 折交叉驗證
+for fold = 1:num_folds
+    % 分割訓練集和測試集
+    train_indices = (indices ~= fold);
+    test_indices = (indices == fold);
+    
+    train_data = combined_data(train_indices, 1:2);  % 80% 訓練數據
+    test_data = combined_data(test_indices, 1:2);  % 20% 測試數據
+    score_Con_train = combined_data(train_indices, 3);
+    score_Con_test = combined_data(test_indices, 3);
+
+    % 在訓練集上使用 K-means 進行分群
+    [idx, C] = kmeans(train_data, num_clusters, 'Replicates', 200);
+    
+    % 將質心用於測試數據，使用 knnsearch 將測試數據分配到最近的質心
+    idx_test = knnsearch(C, test_data);
+    
+    % 訓練集上的結果
+    clustered_data_train = [train_data, idx, score_Con_train];
+    mean_values_train = arrayfun(@(g) mean(clustered_data_train(clustered_data_train(:, 3) == g, 4)), 1:num_clusters);
+    train_results = [train_results; mean_values_train];
+    
+    % 測試集上的結果
+    clustered_data_test = [test_data, idx_test, score_Con_test];
+    mean_values_test = arrayfun(@(g) mean(clustered_data_test(clustered_data_test(:, 3) == g, 4)), 1:num_clusters);
+    test_results = [test_results; mean_values_test];
+    
+    % 顯示每次交叉驗證的結果
+    disp(['折數: ', num2str(fold)]);
+    disp('訓練集的群組 score 平均值:');
+    disp(mean_values_train);
+    disp('測試集的群組 score 平均值:');
+    disp(mean_values_test);
+end
+
+% 計算所有折的平均結果
+mean_train_results = mean(train_results);
+mean_test_results = mean(test_results);
+
+% 顯示最終交叉驗證結果
+disp('訓練集的平均群組 score 結果:');
+disp(mean_train_results);
+disp('測試集的平均群組 score 結果:');
+disp(mean_test_results);
+
+
+
+
+
